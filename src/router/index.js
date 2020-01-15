@@ -30,8 +30,8 @@ let router = new VueRouter({
                     component:Postlist
                 },
                 {
-                    name:'PostPublisht',
-                    path:'postPublish',
+                    name:'PostPublish',
+                    path:'postPublish/:id?',
                     component:PostPublish
                 }
             ]

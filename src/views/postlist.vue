@@ -20,10 +20,28 @@
             <el-button type="primary" icon="el-icon-edit" @click="edit(scope.row)"></el-button>
           </el-tooltip>
           <el-tooltip class="item" effect="dark" content="分享" placement="top">
-            <el-button type="info" icon="el-icon-share"></el-button>
+            <el-button type="info" icon="el-icon-share" @click="shareDialogFormVisible = false">
+              <el-dialog title="分享设置" :visible.sync="shareDialogFormVisible">
+                <el-form :model="shareForm">
+                  <el-form-item label="分享用户" :label-width="'100px'">
+                    <el-input auto-complete="off"></el-input>
+                  </el-form-item>
+                  <el-form-item label="分享感言" :label-width="'100px'">
+                    <el-select placeholder="请选择活动区域">
+                      <el-option label="区域一" value="shanghai"></el-option>
+                      <el-option label="区域二" value="beijing"></el-option>
+                    </el-select>
+                  </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                  <el-button @click="shareDialogFormVisible = false">取 消</el-button>
+                  <el-button type="primary">确 定</el-button>
+                </div>
+              </el-dialog>
+            </el-button>
           </el-tooltip>
           <el-tooltip class="item" effect="dark" content="删除" placement="top">
-            <el-button type="danger" icon="el-icon-delete"></el-button>
+            <el-button type="danger" icon="el-icon-delete" @click="del"></el-button>
           </el-tooltip>
         </template>
       </el-table-column>
@@ -49,7 +67,8 @@ export default {
       postlist: [],
       pageSize: 2,
       pageIndex: 1,
-      totoalPage: 12
+      totoalPage: 0,
+      shareDialogFormVisible: false
     };
   },
   mounted() {
@@ -57,26 +76,51 @@ export default {
   },
   methods: {
     edit(data) {
-      console.log(data);
+      this.$router.push({path:`postPublish/${data.id}`})
+    },
+    del(){
+      this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          this.$message({
+            type: "success",
+            message: "删除成功!"
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除"
+          });
+        });
+    },
+    shareForm() {
+      //this.shareDialogFormVisible = false;
+    },
+    share() {
+      //this.shareDialogFormVisible = true;
     },
     async getdata() {
       let res = await getPostList({
         pageSize: this.pageSize,
         pageIndex: this.pageIndex
       });
-      //console.log(res);
+      console.log(res);
       this.postlist = res.data.data;
-      console.log(this.postlist)
+      this.totoalPage = res.data.total;
     },
     handleSizeChange(val) {
       //console.log(`每页 ${val} 条`);
       this.pageSize = val;
-      this.getdata()
+      this.getdata();
     },
     handleCurrentChange(val) {
       //console.log(`当前页: ${val}`);
-       this.pageIndex = val;
-       this.getdata()
+      this.pageIndex = val;
+      this.getdata();
     }
   }
 };

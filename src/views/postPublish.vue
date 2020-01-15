@@ -41,7 +41,7 @@
             @change="handleCheckAllChange"
           >全选</el-checkbox>
           <div style="margin: 15px 0;"></div>
-          <el-checkbox-group v-model="post.categaries" @change="handleCheckedCitiesChange">
+          <el-checkbox-group v-model="post.categories" @change="handleCheckedCitiesChange">
             <el-checkbox v-for="city in catelist" :label="city.id" :key="city.id">{{city.name}}</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
@@ -54,12 +54,13 @@
             :on-success="fengmian"
             :on-remove='removePost'
             list-type="picture-card"
+            :file-list="post.cover"
           >
             <i class="el-icon-plus"></i>
           </el-upload>
         </el-form-item>
 
-        <el-button type="primary" @click="publishPost" style="float:right;margin-bottom:20px" >发布文章</el-button>
+        <el-button type="primary" @click="publishPost" style="float:right;margin-bottom:20px" >{{btntext}}</el-button>
       </el-form>
     </el-card>
   </div>
@@ -70,15 +71,17 @@ import VueEditor from "vue-word-editor";
 import "quill/dist/quill.snow.css";
 import { getCategory } from "../apis/cate.js";
 import {publishPost} from '../apis/article.js'
+import {getArticleById} from '../apis/article.js'
 export default {
   data() {
     return {
+      btntext:'发布文章',
       catelist: [],
       post: {
         title: "",
         type: 1,
         content: "",
-        categaries: [],
+        categories: [],
         cover:[]
       },
       config: {
@@ -133,10 +136,10 @@ export default {
       if (this.post.type === 1) {
         this.post.content = this.$refs.myeditor.editor.root.innerHTML;
       } 
-      this.post.categaries = this.post.categaries.map(value=>{
+      this.post.categories = this.post.categories.map(value=>{
           return {id:value}
       })
-      console.log(this.post);
+      //console.log(this.post);
       let res = await publishPost(this.post);
       console.log(res);
       if(res.data.message === '文章发表成功'){
@@ -167,7 +170,29 @@ export default {
   async mounted() {
     let res = await getCategory();
     //console.log(res);
-    this.catelist = res.data.data.splice(2)
+    this.catelist = res.data.data.splice(2);
+    let obj = this.$route.params;
+    console.log(obj);
+    if(obj){
+      let post = await getArticleById(obj.id)
+      this.post = post.data.data
+    }
+    console.log(this.post.cover)
+    if(this.post.type === 1){
+      this.$refs.myeditor.editor.clipboard.dangerouslyPasteHTML(0,this.post.content)
+      this.btntext = '编辑文章'
+    }
+    this.post.categories = this.post.categories.map(value=>{
+      return value.id
+    })
+    if(this.post.categories.length === this.catelist.length||this.post.categories.length === 0){
+      this.isIndeterminate  = false;
+    }
+    this.post.cover.forEach(value =>{
+      if(value.url.indexOf('http') === -1){
+        value.url = 'http://127.0.0.1:3000' + value.url
+      }
+    })
   }
 };
 </script>

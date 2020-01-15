@@ -1,14 +1,19 @@
 import axios from '../utils/myaxios.js'
-export const getPostList = (params)=>{
+export const getPostList = (params) => {
     return axios({
-        url:'/post',
+        url: '/post',
         params
     })
 }
-export const publishPost = (data)=>{
+export const publishPost = (data) => {
     return axios({
-        method:'post',
-        url:'/post',
+        method: 'post',
+        url: '/post',
         data
+    })
+}
+export const getArticleById = (id) => {
+    return axios({
+        url: `/post/${id}`
     })
 }

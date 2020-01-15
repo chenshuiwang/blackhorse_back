@@ -52,7 +52,7 @@
             action="http://localhost:3000/upload"
             :headers="getToken()"
             :on-success="fengmian"
-            :on-remove='removePost'
+            :on-remove="removePost"
             list-type="picture-card"
             :file-list="post.cover"
           >
@@ -60,7 +60,11 @@
           </el-upload>
         </el-form-item>
 
-        <el-button type="primary" @click="publishPost" style="float:right;margin-bottom:20px" >{{btntext}}</el-button>
+        <el-button
+          type="primary"
+          @click="publishPost"
+          style="float:right;margin-bottom:20px"
+        >{{btntext}}</el-button>
       </el-form>
     </el-card>
   </div>
@@ -70,19 +74,19 @@
 import VueEditor from "vue-word-editor";
 import "quill/dist/quill.snow.css";
 import { getCategory } from "../apis/cate.js";
-import {publishPost} from '../apis/article.js'
-import {getArticleById} from '../apis/article.js'
+import { publishPost } from "../apis/article.js";
+import { getArticleById, editArticleById } from "../apis/article.js";
 export default {
   data() {
     return {
-      btntext:'发布文章',
+      btntext: "发布文章",
       catelist: [],
       post: {
         title: "",
         type: 1,
         content: "",
         categories: [],
-        cover:[]
+        cover: []
       },
       config: {
         // 上传图片的配置
@@ -120,30 +124,46 @@ export default {
     },
     handleCheckAllChange(val) {
       //console.log(val);
-      this.post.categaries = val ? this.catelist.map(value=>{
-          return value.id
-      }) : []
+      this.post.categaries = val
+        ? this.catelist.map(value => {
+            return value.id;
+          })
+        : [];
       this.isIndeterminate = false;
-
     },
     handleCheckedCitiesChange(value) {
       //console.log(value);
       let checkCount = value.length;
-      this.checkAll = checkCount === this.catelist.length
-      this.isIndeterminate = checkCount > 0 && checkCount < this.catelist.length
+      this.checkAll = checkCount === this.catelist.length;
+      this.isIndeterminate =
+        checkCount > 0 && checkCount < this.catelist.length;
     },
     async publishPost() {
-      if (this.post.type === 1) {
-        this.post.content = this.$refs.myeditor.editor.root.innerHTML;
-      } 
-      this.post.categories = this.post.categories.map(value=>{
-          return {id:value}
-      })
-      //console.log(this.post);
-      let res = await publishPost(this.post);
-      console.log(res);
-      if(res.data.message === '文章发表成功'){
-          this.$message.success('文章发表成功');
+      if (this.$route.params.id) {
+        console.log(this.$route.params.id);
+        this.post.categories = this.post.categories.map(value => {
+          return { id: value };
+        });
+        let res = await editArticleById(this.$route.params.id, this.post);
+        console.log(res);
+        if (res.data.message === "文章编辑成功") {
+          this.$message.success("修改成功");
+          this.$router.push({ name: "Postlist" });
+        }
+      } else {
+        if (this.post.type === 1) {
+          this.post.content = this.$refs.myeditor.editor.root.innerHTML;
+        }
+        this.post.categories = this.post.categories.map(value => {
+          return { id: value };
+        });
+        //console.log(this.post);
+        let res = await publishPost(this.post);
+        console.log(res);
+        if (res.data.message === "文章发布成功") {
+          this.$message.success("文章发表成功");
+          this.$router.push({ name: "Postlist" });
+        }
       }
     },
     handlesuccess(response) {
@@ -151,48 +171,64 @@ export default {
         this.post.content = "http://127.0.0.1:3000" + response.data.url;
       }
     },
-     fengmian(response) {
-         console.log(response)
-         if(response.message === '文件上传成功'){
-             this.post.cover.push({id: response.data.id})
-         }
-     },
-     removePost(file){
-         console.log(file);
-         let id = file.response.data.id;
-         for(let i = 0; i < this.post.cover.length; i++){
-             if(this.post.cover[i].id === id){
-                 this.post.cover.splice(i,1)
-             }
-         }
-     }
+    fengmian(response) {
+      console.log(response);
+      response.data.url = "http://127.0.0.1:3000" + response.data.url;
+
+      if (response.message === "文件上传成功") {
+        this.post.cover.push({ id: response.data.id, url: response.data.url });
+      }
+    },
+    removePost(file) {
+      console.log(file);
+      let id;
+      if (this.$route.params.id) {
+        id = file.id;
+      } else {
+        id = file.response.data.id;
+      }
+      for (let i = 0; i < this.post.cover.length; i++) {
+        if (this.post.cover[i].id === id) {
+          this.post.cover.splice(i, 1);
+        }
+      }
+    }
   },
   async mounted() {
     let res = await getCategory();
     //console.log(res);
     this.catelist = res.data.data.splice(2);
     let obj = this.$route.params;
-    console.log(obj);
-    if(obj){
-      let post = await getArticleById(obj.id)
-      this.post = post.data.data
+    //console.log(obj);
+    if (obj.id) {
+      let post = await getArticleById(obj.id);
+      this.post = post.data.data;
+      console.log(212313)
+    } else {
+      return;
     }
-    console.log(this.post.cover)
-    if(this.post.type === 1){
-      this.$refs.myeditor.editor.clipboard.dangerouslyPasteHTML(0,this.post.content)
-      this.btntext = '编辑文章'
+    //console.log(this.post.cover);
+    if (this.post.type === 1) {
+      this.$refs.myeditor.editor.clipboard.dangerouslyPasteHTML(
+        0,
+        this.post.content
+      );
+      this.btntext = "编辑文章";
+      this.post.categories = this.post.categories.map(value => {
+        return value.id;
+      });
     }
-    this.post.categories = this.post.categories.map(value=>{
-      return value.id
-    })
-    if(this.post.categories.length === this.catelist.length||this.post.categories.length === 0){
-      this.isIndeterminate  = false;
+    if (
+      this.post.categories.length === this.catelist.length ||
+      this.post.categories.length === 0
+    ) {
+      this.isIndeterminate = false;
     }
-    this.post.cover.forEach(value =>{
-      if(value.url.indexOf('http') === -1){
-        value.url = 'http://127.0.0.1:3000' + value.url
+    this.post.cover.forEach(value => {
+      if (value.url.indexOf("http") === -1) {
+        value.url = "http://127.0.0.1:3000" + value.url;
       }
-    })
+    });
   }
 };
 </script>

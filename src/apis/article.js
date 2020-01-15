@@ -17,3 +17,10 @@ export const getArticleById = (id) => {
         url: `/post/${id}`
     })
 }
+export const editArticleById = (id,data) =>{
+    return axios({
+        method: 'post',
+        url: `/post_update/${id}`,
+        data
+    })
+}
